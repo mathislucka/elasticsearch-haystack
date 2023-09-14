@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-present John Doe <jd@example.com>
+# SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 import logging
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @document_store
-class ExampleDocumentStore:  # FIXME
+class ElasticsearchDocumentStore:  # FIXME
     """
     Except for the __init__(), signatures of any other method in this class must not change.
     """
