@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
   # we distribute the preview version of Haystack 2.0 under the package "haystack-ai"
   "haystack-ai",
+  "elasticsearch>=8,<9"
 ]
 
 [project.urls]
