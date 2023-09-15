@@ -41,6 +41,7 @@ path = "src/elasticsearch_haystack/__about__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "pytest-xdist",
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
