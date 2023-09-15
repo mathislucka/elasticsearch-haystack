@@ -4,7 +4,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Union, Mapping
 
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, ConflictError
 from elastic_transport import NodeConfig
 
 from haystack.preview.dataclasses import Document
@@ -135,9 +135,22 @@ class ElasticsearchDocumentStore:
         :raises DuplicateDocumentError: Exception trigger on duplicate document if `policy=DuplicatePolicy.FAIL`
         :return: None
         """
-        for _ in documents:  # FIXME
-            if policy == DuplicatePolicy.FAIL:
-                raise DuplicateDocumentError
+        if len(documents) > 0:
+            if not isinstance(documents[0], Document):
+                raise ValueError("param 'documents' must contain a list of objects of type Document")
+
+        if policy == DuplicatePolicy.OVERWRITE:
+            for doc in documents:
+                # Create a document or overwrite it if it already exists.
+                self._client.index(index=self._index, id=doc.id, document=doc.to_dict())
+            return
+
+        for doc in documents:
+            # Create a document only if it doesn't exist yet.
+            # If it does and the policy is set to FAIL we raise an error, otherwise we ignore it.
+            res = self._client.options(ignore_status=409).create(index=self._index, id=doc.id, document=doc.to_dict())
+            if res.meta.status == 409 and policy == DuplicatePolicy.FAIL:
+                raise DuplicateDocumentError(f"Document with id '{doc.id}' already exists in the document store.")
 
     def delete_documents(self, document_ids: List[str]) -> None:
         """
