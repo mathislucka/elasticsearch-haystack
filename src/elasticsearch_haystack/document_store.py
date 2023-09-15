@@ -159,6 +159,7 @@ class ElasticsearchDocumentStore:
 
         :param object_ids: the object_ids to delete
         """
-        for doc_id in document_ids:  # FIXME
-            msg = f"ID '{doc_id}' not found, cannot delete it."
-            raise MissingDocumentError(msg)
+        for id_ in document_ids:
+            res = self._client.options(ignore_status=404).delete(index=self._index, id=id_)
+            if res.meta.status == 404:
+                raise MissingDocumentError(f"Document with id '{id_}' not found in the document store.")
