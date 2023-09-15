@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, Mapping
+
+from elasticsearch import Elasticsearch
+from elastic_transport import NodeConfig
 
 from haystack.preview.dataclasses import Document
 from haystack.preview.document_stores.decorator import document_store
@@ -11,20 +14,34 @@ from haystack.preview.document_stores.protocols import DuplicatePolicy
 
 logger = logging.getLogger(__name__)
 
+Hosts = Union[str, List[Union[str, Mapping[str, Union[str, int]], NodeConfig]]]
+
 
 @document_store
-class ElasticsearchDocumentStore:  # FIXME
-    """
-    Except for the __init__(), signatures of any other method in this class must not change.
-    """
+class ElasticsearchDocumentStore:
+    def __init__(self, *, hosts: Optional[Hosts] = None, index: str = "default", **kwargs):
+        """
+        Creates a new ElasticsearchDocumentStore instance.
 
-    def __init__(self, example_param: int = 42):
+        For more information on connection parameters, see the official Elasticsearch documentation:
+        https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/connecting.html
+
+        For the full list of supported kwargs, see the official Elasticsearch reference:
+        https://elasticsearch-py.readthedocs.io/en/stable/api.html#module-elasticsearch
+
+        :param hosts: List of hosts running the Elasticsearch client. Defaults to None
+        :param index: Name of index in Elasticsearch, if it doesn't exist it will be created. Defaults to "default"
+        :param \*\*kwargs: Optional arguments that ``Elasticsearch`` takes.
         """
-        Initializes the store. The __init__ constructor is not part of the Store Protocol
-        and the signature can be customized to your needs. For example, parameters needed
-        to set up a database client would be passed to this method.
-        """
-        self.example_param = example_param  # FIXME
+        self._client = Elasticsearch(hosts, **kwargs)
+        self._index = index
+
+        # Check client connection, this will raise if not connected
+        self._client.info()
+
+        # Create the index if it doesn't exist
+        if not self._client.indices.exists(index=index):
+            self._client.indices.create(index=index)
 
     def count_documents(self) -> int:
         """
