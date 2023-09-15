@@ -47,7 +47,7 @@ class ElasticsearchDocumentStore:
         """
         Returns how many documents are present in the document store.
         """
-        return 0  # FIXME
+        return self._client.count(index=self._index)["count"]
 
     def filter_documents(self, _: Optional[Dict[str, Any]] = None) -> List[Document]:
         """
