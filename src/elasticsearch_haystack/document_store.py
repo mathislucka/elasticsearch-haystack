@@ -148,9 +148,25 @@ class ElasticsearchDocumentStore:
         for doc in documents:
             # Create a document only if it doesn't exist yet.
             # If it does and the policy is set to FAIL we raise an error, otherwise we ignore it.
-            res = self._client.options(ignore_status=409).create(index=self._index, id=doc.id, document=doc.to_dict())
+            res = self._client.options(ignore_status=409).create(
+                index=self._index, id=doc.id, document=self._serialize_document(doc)
+            )
             if res.meta.status == 409 and policy == DuplicatePolicy.FAIL:
                 raise DuplicateDocumentError(f"Document with id '{doc.id}' already exists in the document store.")
+
+    def _serialize_document(self, doc: Document) -> Dict[str, Any]:
+        """
+        Serializes Document to a dictionary handling conversion of Pandas' dataframe
+        and NumPy arrays if present.
+        """
+        res = doc.to_dict()
+        if res["array"] is not None:
+            res["array"] = res["array"].tolist()
+        if res["dataframe"] is not None:
+            res["dataframe"] = res["dataframe"].to_dict()
+        if res["embedding"] is not None:
+            res["embedding"] = res["embedding"].tolist()
+        return res
 
     def delete_documents(self, document_ids: List[str]) -> None:
         """
