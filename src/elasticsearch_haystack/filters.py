@@ -9,6 +9,8 @@ def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -
     """
     Converts Haystack filters in ElasticSearch compatible filters.
     """
+    if not isinstance(filters, dict) and not isinstance(filters, list):
+        raise FilterError("Filters must be either a dictionary or a list")
     conditions = []
     if isinstance(filters, dict):
         filters = [filters]
@@ -82,6 +84,8 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 if isinstance(val, list):
                     raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"lte": val}}})
+            else:
+                raise FilterError(f"Unknown comparator '{comparator}'")
     elif isinstance(comparison, list):
         result.append({"terms": {field: comparison}})
     elif isinstance(comparison, np.ndarray):

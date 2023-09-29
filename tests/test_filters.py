@@ -1,4 +1,5 @@
 import pytest
+from haystack.preview.errors import FilterError
 
 from elasticsearch_haystack.filters import _normalize_filters, _normalize_ranges
 
@@ -107,6 +108,17 @@ filters_data = [
 def test_normalize_filters(filters, expected):
     result = _normalize_filters(filters)
     assert result == expected
+
+
+def test_normalize_filters_raises_with_malformed_filters():
+    with pytest.raises(FilterError):
+        _normalize_filters("not a filter")
+
+    with pytest.raises(FilterError):
+        _normalize_filters({"number": {"page": "100"}})
+
+    with pytest.raises(FilterError):
+        _normalize_filters({"number": {"page": {"chapter": "intro"}}})
 
 
 def test_normalize_ranges():
