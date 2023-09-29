@@ -2,9 +2,13 @@ from typing import Any, Dict, List, Union
 
 import numpy as np
 from pandas import DataFrame
+from haystack.preview.errors import FilterError
 
 
 def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -> Dict[str, Any]:
+    """
+    Converts Haystack filters in ElasticSearch compatible filters.
+    """
     conditions = []
     if isinstance(filters, dict):
         filters = [filters]
@@ -24,10 +28,10 @@ def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -
 
     if logical_condition == "$not":
         return {"bool": {"must_not": conditions}}
-    elif logical_condition == "$and":
-        return {"bool": {"must": conditions}}
     elif logical_condition == "$or":
         return {"bool": {"should": conditions}}
+
+    # If no logical condition is specified we default to "$and"
     return {"bool": {"must": conditions}}
 
 
@@ -52,39 +56,43 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 result.append({"term": {field: val}})
             elif comparator == "$ne":
                 if isinstance(val, list):
-                    raise Exception("MUST NOT be a list")
+                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"bool": {"must_not": {"term": {field: val}}}})
             elif comparator == "$in":
                 if not isinstance(val, list):
-                    raise Exception("MUST be a list")
+                    raise FilterError(f"{field}'s value must be a list when using '{comparator}' comparator")
                 result.append({"terms": {field: val}})
             elif comparator == "$nin":
                 if not isinstance(val, list):
-                    raise Exception("MUST be a list")
+                    raise FilterError(f"{field}'s value must be a list when using '{comparator}' comparator")
                 result.append({"bool": {"must_not": {"terms": {field: val}}}})
             elif comparator == "$gt":
                 if isinstance(val, list):
-                    raise Exception("MUST NOT be a list")
+                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"gt": val}}})
             elif comparator == "$gte":
                 if isinstance(val, list):
-                    raise Exception("MUST NOT be a list")
+                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"gte": val}}})
             elif comparator == "$lt":
                 if isinstance(val, list):
-                    raise Exception("MUST NOT be a list")
+                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"lt": val}}})
             elif comparator == "$lte":
                 if isinstance(val, list):
-                    raise Exception("MUST NOT be a list")
+                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"lte": val}}})
     elif isinstance(comparison, list):
         result.append({"terms": {field: comparison}})
     elif isinstance(comparison, np.ndarray):
         result.append({"terms": {field: comparison.tolist()}})
     elif isinstance(comparison, DataFrame):
+        # We're saving dataframes as json strings so we compare them as such
         result.append({"match": {field: comparison.to_json()}})
     elif isinstance(comparison, str):
+        # We can't use "term" for text fields as ElasticSearch changes the value of text.
+        # More info here:
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html#query-dsl-term-query
         result.append({"match": {field: comparison}})
     else:
         result.append({"term": {field: comparison}})
