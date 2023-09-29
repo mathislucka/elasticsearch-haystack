@@ -4,7 +4,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Union, Mapping
 
-from elasticsearch import Elasticsearch, ConflictError
+from elasticsearch import Elasticsearch, helpers
 from elastic_transport import NodeConfig
 
 from haystack.preview.dataclasses import Document
@@ -171,11 +171,15 @@ class ElasticsearchDocumentStore:
     def delete_documents(self, document_ids: List[str]) -> None:
         """
         Deletes all documents with a matching document_ids from the document store.
-        Fails with `MissingDocumentError` if no document with this id is present in the store.
 
         :param object_ids: the object_ids to delete
         """
-        for id_ in document_ids:
-            res = self._client.options(ignore_status=404).delete(index=self._index, id=id_)
-            if res.meta.status == 404:
-                raise MissingDocumentError(f"Document with id '{id_}' not found in the document store.")
+
+        #
+        helpers.bulk(
+            client=self._client,
+            actions=({"_op_type": "delete", "_id": id} for id in document_ids),
+            refresh="wait_for",
+            index=self._index,
+            raise_on_error=False,
+        )
