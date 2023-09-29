@@ -1,6 +1,6 @@
 import pytest
 
-from elasticsearch_haystack.filters import _normalize_filters
+from elasticsearch_haystack.filters import _normalize_filters, _normalize_ranges
 
 filters_data = [
     (
@@ -104,7 +104,17 @@ filters_data = [
 
 
 @pytest.mark.parametrize("filters, expected", filters_data)
-@pytest.mark.unit
 def test_normalize_filters(filters, expected):
     result = _normalize_filters(filters)
     assert result == expected
+
+
+def test_normalize_ranges():
+    conditions = [
+        {"range": {"date": {"lt": "2021-01-01"}}},
+        {"range": {"date": {"gte": "2015-01-01"}}},
+    ]
+    conditions = _normalize_ranges(conditions)
+    assert conditions == [
+        {"range": {"date": {"lt": "2021-01-01", "gte": "2015-01-01"}}},
+    ]

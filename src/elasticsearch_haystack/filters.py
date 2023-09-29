@@ -92,18 +92,31 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
 
 
 def _normalize_ranges(conditions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    range_conditions = [cond["range"] for cond in conditions if "range" in cond]
+    """
+    Merges range conditions acting on a same field.
+
+    Example usage:
+
+    ```python
+    conditions = [
+        {"range": {"date": {"lt": "2021-01-01"}}},
+        {"range": {"date": {"gte": "2015-01-01"}}},
+    ]
+    conditions = _normalize_ranges(conditions)
+    assert conditions == [
+        {"range": {"date": {"lt": "2021-01-01", "gte": "2015-01-01"}}},
+    ]
+    ```
+    """
+    range_conditions = [list(c["range"].items())[0] for c in conditions if "range" in c]
     if range_conditions:
-        conditions = [condition for condition in conditions if "range" not in condition]
+        conditions = [c for c in conditions if "range" not in c]
         range_conditions_dict = {}
-        for condition in range_conditions:
-            field_name = list(condition.keys())[0]
-            operation = list(condition[field_name].keys())[0]
-            comparison_value = condition[field_name][operation]
+        for field_name, comparison in range_conditions:
             if field_name not in range_conditions_dict:
                 range_conditions_dict[field_name] = {}
-            range_conditions_dict[field_name][operation] = comparison_value
+            range_conditions_dict[field_name].update(comparison)
 
-        for field_name, comparison_operations in range_conditions_dict.items():
-            conditions.append({"range": {field_name: comparison_operations}})
+        for field_name, comparisons in range_conditions_dict.items():
+            conditions.append({"range": {field_name: comparisons}})
     return conditions
