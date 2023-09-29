@@ -84,6 +84,10 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 if isinstance(val, list):
                     raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
                 result.append({"range": {field: {"lte": val}}})
+            elif comparator in ["$not", "$or"]:
+                result.append(_normalize_filters(val, comparator))
+            elif comparator == "$and":
+                result.append(_normalize_filters({field: val}, comparator))
             else:
                 raise FilterError(f"Unknown comparator '{comparator}'")
     elif isinstance(comparison, list):

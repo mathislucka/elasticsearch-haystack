@@ -100,7 +100,40 @@ filters_data = [
             }
         },
     ),
-    ({"text": "A Foo Document 1"}, {'match': {'text': 'A Foo Document 1'}}),
+    ({"text": "A Foo Document 1"}, {"match": {"text": "A Foo Document 1"}}),
+    (
+        {"$or": {"name": {"$or": [{"$eq": "name_0"}, {"$eq": "name_1"}]}, "number": {"$lt": 1.0}}},
+        {
+            "bool": {
+                "should": [
+                    {"bool": {"should": [{"match": {"$eq": "name_0"}}, {"match": {"$eq": "name_1"}}]}},
+                    {"range": {"number": {"lt": 1.0}}},
+                ]
+            }
+        },
+    ),
+    (
+        {"$and": {"number": {"$and": {"$lte": 2, "$gte": 0}}, "name": {"$in": ["name_0", "name_1"]}}},
+        {
+            "bool": {
+                "must": [
+                    {"bool": {"must": [{"range": {"number": {"lte": 2, "gte": 0}}}]}},
+                    {"terms": {"name": ["name_0", "name_1"]}},
+                ]
+            }
+        },
+    ),
+    (
+        {"number": {"$lte": 2, "$gte": 0}, "name": ["name_0", "name_1"]},
+        {
+            "bool": {
+                "must": [
+                    {"terms": {"name": ["name_0", "name_1"]}},
+                    {"range": {"number": {"lte": 2, "gte": 0}}},
+                ]
+            }
+        },
+    ),
 ]
 
 
