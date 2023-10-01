@@ -68,22 +68,10 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 if not isinstance(val, list):
                     raise FilterError(f"{field}'s value must be a list when using '{comparator}' comparator")
                 result.append({"bool": {"must_not": {"terms": {field: val}}}})
-            elif comparator == "$gt":
+            elif comparator in ["$gt", "$gte", "$lt", "$lte"]:
                 if isinstance(val, list):
                     raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
-                result.append({"range": {field: {"gt": val}}})
-            elif comparator == "$gte":
-                if isinstance(val, list):
-                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
-                result.append({"range": {field: {"gte": val}}})
-            elif comparator == "$lt":
-                if isinstance(val, list):
-                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
-                result.append({"range": {field: {"lt": val}}})
-            elif comparator == "$lte":
-                if isinstance(val, list):
-                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
-                result.append({"range": {field: {"lte": val}}})
+                result.append({"range": {field: {comparator[1:]: val}}})
             elif comparator in ["$not", "$or"]:
                 result.append(_normalize_filters(val, comparator))
             elif comparator == "$and":
