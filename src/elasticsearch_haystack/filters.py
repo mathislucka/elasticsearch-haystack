@@ -74,6 +74,10 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 result.append({"range": {field: {comparator[1:]: val}}})
             elif comparator in ["$not", "$or"]:
                 result.append(_normalize_filters(val, comparator))
+            elif comparator == "$and" and isinstance(val, list):
+                # We're assuming there are no duplicate items in the list
+                flat_filters = {k: v for d in val for k, v in d.items()}
+                result.extend(_parse_comparison(field, flat_filters))
             elif comparator == "$and":
                 result.append(_normalize_filters({field: val}, comparator))
             else:

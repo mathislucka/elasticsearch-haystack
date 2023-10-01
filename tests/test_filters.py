@@ -134,6 +134,10 @@ filters_data = [
             }
         },
     ),
+    (
+        {"number": {"$and": [{"$lte": 2}, {"$gte": 0}]}},
+        {"bool": {"must": [{"range": {"number": {"lte": 2, "gte": 0}}}]}},
+    ),
 ]
 
 
