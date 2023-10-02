@@ -1,13 +1,11 @@
 # SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-from typing import List
-
 import pytest
-from haystack.preview.testing.document_store import DocumentStoreBaseTests
 from haystack.preview.dataclasses.document import Document
-from haystack.preview.document_stores.protocols import DuplicatePolicy
 from haystack.preview.document_stores.errors import DuplicateDocumentError
+from haystack.preview.document_stores.protocols import DuplicatePolicy
+from haystack.preview.testing.document_store import DocumentStoreBaseTests
 
 from elasticsearch_haystack.document_store import ElasticsearchDocumentStore
 

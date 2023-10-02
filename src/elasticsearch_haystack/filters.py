@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Union
 
 import numpy as np
-from pandas import DataFrame
 from haystack.preview.errors import FilterError
+from pandas import DataFrame
 
 
 def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -> Dict[str, Any]:
@@ -10,12 +10,13 @@ def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -
     Converts Haystack filters in ElasticSearch compatible filters.
     """
     if not isinstance(filters, dict) and not isinstance(filters, list):
-        raise FilterError("Filters must be either a dictionary or a list")
+        msg = "Filters must be either a dictionary or a list"
+        raise FilterError(msg)
     conditions = []
     if isinstance(filters, dict):
         filters = [filters]
-    for filter in filters:
-        for operator, value in filter.items():
+    for filter_ in filters:
+        for operator, value in filter_.items():
             if operator in ["$not", "$and", "$or"]:
                 # Logical operators
                 conditions.append(_normalize_filters(value, operator))
@@ -58,19 +59,23 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
                 result.append({"term": {field: val}})
             elif comparator == "$ne":
                 if isinstance(val, list):
-                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
+                    msg = f"{field}'s value can't be a list when using '{comparator}' comparator"
+                    raise FilterError(msg)
                 result.append({"bool": {"must_not": {"term": {field: val}}}})
             elif comparator == "$in":
                 if not isinstance(val, list):
-                    raise FilterError(f"{field}'s value must be a list when using '{comparator}' comparator")
+                    msg = f"{field}'s value must be a list when using '{comparator}' comparator"
+                    raise FilterError(msg)
                 result.append({"terms": {field: val}})
             elif comparator == "$nin":
                 if not isinstance(val, list):
-                    raise FilterError(f"{field}'s value must be a list when using '{comparator}' comparator")
+                    msg = f"{field}'s value must be a list when using '{comparator}' comparator"
+                    raise FilterError(msg)
                 result.append({"bool": {"must_not": {"terms": {field: val}}}})
             elif comparator in ["$gt", "$gte", "$lt", "$lte"]:
                 if isinstance(val, list):
-                    raise FilterError(f"{field}'s value can't be a list when using '{comparator}' comparator")
+                    msg = f"{field}'s value can't be a list when using '{comparator}' comparator"
+                    raise FilterError(msg)
                 result.append({"range": {field: {comparator[1:]: val}}})
             elif comparator in ["$not", "$or"]:
                 result.append(_normalize_filters(val, comparator))
@@ -81,7 +86,8 @@ def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> 
             elif comparator == "$and":
                 result.append(_normalize_filters({field: val}, comparator))
             else:
-                raise FilterError(f"Unknown comparator '{comparator}'")
+                msg = f"Unknown comparator '{comparator}'"
+                raise FilterError(msg)
     elif isinstance(comparison, list):
         result.append({"terms": {field: comparison}})
     elif isinstance(comparison, np.ndarray):
@@ -116,7 +122,7 @@ def _normalize_ranges(conditions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     ]
     ```
     """
-    range_conditions = [list(c["range"].items())[0] for c in conditions if "range" in c]
+    range_conditions = [next(iter(c["range"].items())) for c in conditions if "range" in c]
     if range_conditions:
         conditions = [c for c in conditions if "range" not in c]
         range_conditions_dict = {}

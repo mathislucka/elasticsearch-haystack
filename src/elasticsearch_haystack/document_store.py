@@ -1,19 +1,18 @@
 # SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-import logging
-from typing import Any, Dict, List, Optional, Union, Mapping
 import json
+import logging
+from typing import Any, Dict, List, Mapping, Optional, Union
 
-from elasticsearch import Elasticsearch, helpers
-from elastic_transport import NodeConfig
 import numpy as np
-from pandas import DataFrame
-
+from elastic_transport import NodeConfig
+from elasticsearch import Elasticsearch, helpers
 from haystack.preview.dataclasses import Document
 from haystack.preview.document_stores.decorator import document_store
 from haystack.preview.document_stores.errors import DuplicateDocumentError
 from haystack.preview.document_stores.protocols import DuplicatePolicy
+from pandas import DataFrame
 
 from elasticsearch_haystack.filters import _normalize_filters
 
@@ -36,7 +35,7 @@ class ElasticsearchDocumentStore:
 
         :param hosts: List of hosts running the Elasticsearch client. Defaults to None
         :param index: Name of index in Elasticsearch, if it doesn't exist it will be created. Defaults to "default"
-        :param \*\*kwargs: Optional arguments that ``Elasticsearch`` takes.
+        :param **kwargs: Optional arguments that ``Elasticsearch`` takes.
         """
         self._client = Elasticsearch(hosts, **kwargs)
         self._index = index
@@ -149,7 +148,8 @@ class ElasticsearchDocumentStore:
         """
         if len(documents) > 0:
             if not isinstance(documents[0], Document):
-                raise ValueError("param 'documents' must contain a list of objects of type Document")
+                msg = "param 'documents' must contain a list of objects of type Document"
+                raise ValueError(msg)
 
         action = "index" if policy == DuplicatePolicy.OVERWRITE else "create"
         _, errors = helpers.bulk(
@@ -165,8 +165,9 @@ class ElasticsearchDocumentStore:
         if errors and policy == DuplicatePolicy.FAIL:
             # TODO: Handle errors in a better way, we're assuming that all errors
             # are related to duplicate documents but that could be very well be wrong.
-            ids = ', '.join((e["create"]["_id"] for e in errors))
-            raise DuplicateDocumentError(f"IDs '{ids}' already exist in the document store.")
+            ids = ", ".join(e["create"]["_id"] for e in errors)
+            msg = f"IDs '{ids}' already exist in the document store."
+            raise DuplicateDocumentError(msg)
 
     def _deserialize_document(self, hit: Dict[str, Any]) -> Document:
         """
@@ -231,7 +232,7 @@ class ElasticsearchDocumentStore:
         #
         helpers.bulk(
             client=self._client,
-            actions=({"_op_type": "delete", "_id": id} for id in document_ids),
+            actions=({"_op_type": "delete", "_id": id_} for id_ in document_ids),
             refresh="wait_for",
             index=self._index,
             raise_on_error=False,
