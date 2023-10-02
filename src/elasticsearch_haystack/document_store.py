@@ -161,11 +161,14 @@ class ElasticsearchDocumentStore:
             index=self._index,
             raise_on_error=False,
         )
-
         if errors and policy == DuplicatePolicy.FAIL:
             # TODO: Handle errors in a better way, we're assuming that all errors
             # are related to duplicate documents but that could be very well be wrong.
-            ids = ", ".join(e["create"]["_id"] for e in errors)
+
+            # mypy complains that `errors`` could be either `int` or a `list` of `dict`s.
+            # Since the type depends on the parameters passed to `helpers.bulk()`` we know
+            # for sure that it will be a `list`.
+            ids = ", ".join(e["create"]["_id"] for e in errors)  # type: ignore[union-attr]
             msg = f"IDs '{ids}' already exist in the document store."
             raise DuplicateDocumentError(msg)
 

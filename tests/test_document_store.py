@@ -17,7 +17,7 @@ class TestDocumentStore(DocumentStoreBaseTests):
     """
 
     @pytest.fixture
-    def docstore(self, request) -> ElasticsearchDocumentStore:
+    def docstore(self, request):
         """
         This is the most basic requirement for the child class: provide
         an instance of this document store so the base class can use it.

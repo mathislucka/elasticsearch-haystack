@@ -39,7 +39,7 @@ def _normalize_filters(filters: Union[List[Dict], Dict], logical_condition="") -
 
 
 def _parse_comparison(field: str, comparison: Union[Dict, List, str, float]) -> List:
-    result = []
+    result: List[Dict[str, Any]] = []
     if isinstance(comparison, dict):
         for comparator, val in comparison.items():
             if comparator == "$eq":
@@ -125,7 +125,7 @@ def _normalize_ranges(conditions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     range_conditions = [next(iter(c["range"].items())) for c in conditions if "range" in c]
     if range_conditions:
         conditions = [c for c in conditions if "range" not in c]
-        range_conditions_dict = {}
+        range_conditions_dict: Dict[str, Any] = {}
         for field_name, comparison in range_conditions:
             if field_name not in range_conditions_dict:
                 range_conditions_dict[field_name] = {}
