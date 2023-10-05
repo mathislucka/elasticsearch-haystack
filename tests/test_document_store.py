@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+from unittest.mock import patch
+
 import pytest
 from haystack.preview.dataclasses.document import Document
 from haystack.preview.document_stores.errors import DuplicateDocumentError
@@ -29,6 +31,31 @@ class TestDocumentStore(DocumentStoreBaseTests):
         store = ElasticsearchDocumentStore(hosts=hosts, index=index)
         yield store
         store._client.options(ignore_status=[400, 404]).indices.delete(index=index)
+
+    @patch("elasticsearch_haystack.document_store.Elasticsearch")
+    def test_to_dict(self, mock_elasticsearch_client):
+        document_store = ElasticsearchDocumentStore(hosts="some hosts")
+        res = document_store.to_dict()
+        assert res == {
+            "type": "ElasticsearchDocumentStore",
+            "init_parameters": {
+                "hosts": "some hosts",
+                "index": "default",
+            },
+        }
+
+    @patch("elasticsearch_haystack.document_store.Elasticsearch")
+    def test_from_dict(self, mock_elasticsearch_client):
+        data = {
+            "type": "ElasticsearchDocumentStore",
+            "init_parameters": {
+                "hosts": "some hosts",
+                "index": "default",
+            },
+        }
+        document_store = ElasticsearchDocumentStore.from_dict(data)
+        assert document_store._hosts == "some hosts"
+        assert document_store._index == "default"
 
     def test_bm25_retrieval(self, docstore: ElasticsearchDocumentStore):
         docstore.write_documents(

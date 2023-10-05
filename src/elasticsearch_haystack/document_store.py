@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 import numpy as np
 from elastic_transport import NodeConfig
 from elasticsearch import Elasticsearch, helpers
+from haystack.preview import default_to_dict, default_from_dict
 from haystack.preview.dataclasses import Document
 from haystack.preview.document_stores.decorator import document_store
 from haystack.preview.document_stores.errors import DuplicateDocumentError
@@ -37,8 +38,10 @@ class ElasticsearchDocumentStore:
         :param index: Name of index in Elasticsearch, if it doesn't exist it will be created. Defaults to "default"
         :param **kwargs: Optional arguments that ``Elasticsearch`` takes.
         """
+        self._hosts = hosts
         self._client = Elasticsearch(hosts, **kwargs)
         self._index = index
+        self._kwargs = kwargs
 
         # Check client connection, this will raise if not connected
         self._client.info()
@@ -46,6 +49,21 @@ class ElasticsearchDocumentStore:
         # Create the index if it doesn't exist
         if not self._client.indices.exists(index=index):
             self._client.indices.create(index=index)
+
+    def to_dict(self) -> Dict[str, Any]:
+        # This is not the best solution to serialise this class but is the fastest to implement.
+        # Not all kwargs types can be serialised to text so this can fail. We must serialise each
+        # type explicitly to handle this properly.
+        return default_to_dict(
+            self,
+            hosts=self._hosts,
+            index=self._index,
+            **self._kwargs,
+        )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ElasticsearchDocumentStore":
+        return default_from_dict(cls, data)
 
     def count_documents(self) -> int:
         """
