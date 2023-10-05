@@ -30,6 +30,29 @@ class TestDocumentStore(DocumentStoreBaseTests):
         yield store
         store._client.options(ignore_status=[400, 404]).indices.delete(index=index)
 
+    def test_bm25_retrieval(self, docstore: ElasticsearchDocumentStore):
+        docstore.write_documents(
+            [
+                Document(text="Haskell is a functional programming language"),
+                Document(text="Lisp is a functional programming language"),
+                Document(text="Exilir is a functional programming language"),
+                Document(text="F# is a functional programming language"),
+                Document(text="C# is a functional programming language"),
+                Document(text="C++ is an object oriented programming language"),
+                Document(text="Dart is an object oriented programming language"),
+                Document(text="Go is an object oriented programming language"),
+                Document(text="Python is a object oriented programming language"),
+                Document(text="Ruby is a object oriented programming language"),
+                Document(text="PHP is a object oriented programming language"),
+            ]
+        )
+
+        res = docstore._bm25_retrieval("functional", top_k=3)
+        assert len(res) == 3
+        assert "functional" in res[0].text
+        assert "functional" in res[1].text
+        assert "functional" in res[2].text
+
     def test_write_duplicate_fail(self, docstore: ElasticsearchDocumentStore):
         """
         Verify `DuplicateDocumentError` is raised when trying to write duplicate files.

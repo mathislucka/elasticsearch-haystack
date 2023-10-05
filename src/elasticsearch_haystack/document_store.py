@@ -240,3 +240,62 @@ class ElasticsearchDocumentStore:
             index=self._index,
             raise_on_error=False,
         )
+
+    def _bm25_retrieval(
+        self,
+        query: str,
+        filters: Optional[Dict[str, Any]] = None,
+        top_k: int = 10,
+        scale_score: bool = True,
+    ) -> List[Document]:
+        """
+        Elasticsearch by defaults uses BM25 search algorithm.
+        Even though this method is called `bm25_retrieval` it searches for `query`
+        using the search algorithm `_client` was configured with.
+
+        This method is not mean to be part of the public interface of
+        `ElasticsearchDocumentStore` nor called directly.
+        `ElasticsearchBM25Retriever` uses this method directly and is the public interface for it.
+
+        `query` must be a non empty string, otherwise a `ValueError` will be raised.
+
+        :param query: String to search in saved Documents' text.
+        :param filters: Filters applied to the retrieved Documents, for more info see `ElasticsearchDocumentStore.filter_documents`, defaults to None
+        :param top_k: Maximum number of Documents to return, defaults to 10
+        :param scale_score: If `True` scales the Document`s scores between 0 and 1, defaults to True
+        :raises ValueError: If `query` is an empty string
+        :return: List of Document that match `query`
+        """
+
+        if not query:
+            raise ValueError("query must be a non empty string")
+
+        body = {
+            "size": top_k,
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "type": "most_fields",
+                                "operator": "AND",
+                            }
+                        }
+                    ]
+                }
+            },
+        }
+        {"query": {"bool": {"must": [{"multi_match": {"query": "PHP", "type": "most_fields", "operator": "AND"}}]}}}
+
+        if filters:
+            body["query"]["bool"]["filter"] = _normalize_filters(filters)
+
+        res = self._client.search(index=self._index, **body)
+
+        docs = []
+        for hit in res["hits"]["hits"]:
+            if scale_score:
+                hit["_score"] = float(1 / (1 + np.exp(-np.asarray(hit["_score"] / 8))))
+            docs.append(self._deserialize_document(hit))
+        return docs
