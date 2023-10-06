@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 import numpy as np
 from elastic_transport import NodeConfig
 from elasticsearch import Elasticsearch, helpers
-from haystack.preview import default_to_dict, default_from_dict
+from haystack.preview import default_from_dict, default_to_dict
 from haystack.preview.dataclasses import Document
 from haystack.preview.document_stores.decorator import document_store
 from haystack.preview.document_stores.errors import DuplicateDocumentError
@@ -262,6 +262,7 @@ class ElasticsearchDocumentStore:
     def _bm25_retrieval(
         self,
         query: str,
+        *,
         filters: Optional[Dict[str, Any]] = None,
         top_k: int = 10,
         scale_score: bool = True,
@@ -278,7 +279,8 @@ class ElasticsearchDocumentStore:
         `query` must be a non empty string, otherwise a `ValueError` will be raised.
 
         :param query: String to search in saved Documents' text.
-        :param filters: Filters applied to the retrieved Documents, for more info see `ElasticsearchDocumentStore.filter_documents`, defaults to None
+        :param filters: Filters applied to the retrieved Documents, for more info
+                        see `ElasticsearchDocumentStore.filter_documents`, defaults to None
         :param top_k: Maximum number of Documents to return, defaults to 10
         :param scale_score: If `True` scales the Document`s scores between 0 and 1, defaults to True
         :raises ValueError: If `query` is an empty string
@@ -286,9 +288,10 @@ class ElasticsearchDocumentStore:
         """
 
         if not query:
-            raise ValueError("query must be a non empty string")
+            msg = "query must be a non empty string"
+            raise ValueError(msg)
 
-        body = {
+        body: Dict[str, Any] = {
             "size": top_k,
             "query": {
                 "bool": {
@@ -304,7 +307,6 @@ class ElasticsearchDocumentStore:
                 }
             },
         }
-        {"query": {"bool": {"must": [{"multi_match": {"query": "PHP", "type": "most_fields", "operator": "AND"}}]}}}
 
         if filters:
             body["query"]["bool"]["filter"] = _normalize_filters(filters)

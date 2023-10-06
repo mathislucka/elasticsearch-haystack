@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
 
 from haystack.preview.dataclasses import Document
 
-from elasticsearch_haystack.document_store import ElasticsearchDocumentStore
 from elasticsearch_haystack.bm25_retriever import ElasticsearchBM25Retriever
+from elasticsearch_haystack.document_store import ElasticsearchDocumentStore
 
 
 def test_init_default():
@@ -19,7 +19,7 @@ def test_init_default():
 
 
 @patch("elasticsearch_haystack.document_store.Elasticsearch")
-def test_to_dict(mock_elasticsearch_client):
+def test_to_dict(_mock_elasticsearch_client):
     document_store = ElasticsearchDocumentStore(hosts="some fake host")
     retriever = ElasticsearchBM25Retriever(document_store=document_store)
     res = retriever.to_dict()
@@ -38,7 +38,7 @@ def test_to_dict(mock_elasticsearch_client):
 
 
 @patch("elasticsearch_haystack.document_store.Elasticsearch")
-def test_from_dict(mock_elasticsearch_client):
+def test_from_dict(_mock_elasticsearch_client):
     data = {
         "type": "ElasticsearchBM25Retriever",
         "init_parameters": {

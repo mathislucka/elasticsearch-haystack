@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2023-present Silvano Cerza <silvanocerza@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
-from typing import Optional, Dict, List, Any
+from typing import Any, Dict, List, Optional
 
-from haystack.preview import component, default_to_dict, default_from_dict
+from haystack.preview import component, default_from_dict, default_to_dict
 from haystack.preview.dataclasses import Document
 
 from elasticsearch_haystack.document_store import ElasticsearchDocumentStore
@@ -13,6 +13,7 @@ from elasticsearch_haystack.document_store import ElasticsearchDocumentStore
 class ElasticsearchBM25Retriever:
     def __init__(
         self,
+        *,
         document_store: ElasticsearchDocumentStore,
         filters: Optional[Dict[str, Any]] = None,
         top_k: int = 10,

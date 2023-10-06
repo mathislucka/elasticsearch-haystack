@@ -33,7 +33,7 @@ class TestDocumentStore(DocumentStoreBaseTests):
         store._client.options(ignore_status=[400, 404]).indices.delete(index=index)
 
     @patch("elasticsearch_haystack.document_store.Elasticsearch")
-    def test_to_dict(self, mock_elasticsearch_client):
+    def test_to_dict(self, _mock_elasticsearch_client):
         document_store = ElasticsearchDocumentStore(hosts="some hosts")
         res = document_store.to_dict()
         assert res == {
@@ -45,7 +45,7 @@ class TestDocumentStore(DocumentStoreBaseTests):
         }
 
     @patch("elasticsearch_haystack.document_store.Elasticsearch")
-    def test_from_dict(self, mock_elasticsearch_client):
+    def test_from_dict(self, _mock_elasticsearch_client):
         data = {
             "type": "ElasticsearchDocumentStore",
             "init_parameters": {
