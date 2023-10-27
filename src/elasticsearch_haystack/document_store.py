@@ -201,8 +201,6 @@ class ElasticsearchDocumentStore:
             data["metadata"]["highlighted"] = hit["highlight"]
         data["score"] = hit["_score"]
 
-        if array := data["array"]:
-            data["array"] = np.asarray(array, dtype=np.float32)
         if dataframe := data["dataframe"]:
             data["dataframe"] = DataFrame.from_dict(json.loads(dataframe))
         if embedding := data["embedding"]:
@@ -213,7 +211,6 @@ class ElasticsearchDocumentStore:
         return Document(
             id=data["id"],
             text=data["text"],
-            array=data["array"],
             dataframe=data["dataframe"],
             blob=data["blob"],
             mime_type=data["mime_type"],
@@ -226,7 +223,7 @@ class ElasticsearchDocumentStore:
     def _serialize_document(self, doc: Document) -> Dict[str, Any]:
         """
         Serializes Document to a dictionary handling conversion of Pandas' dataframe
-        and NumPy arrays if present.
+        if present.
         """
         # We don't use doc.flatten() cause we want to keep the metadata field
         # as it makes it easier to recreate the Document object when calling
@@ -234,8 +231,6 @@ class ElasticsearchDocumentStore:
         # Otherwise we'd have to filter out the fields that are not part of the
         # Document dataclass and keep them as metadata. This is faster and easier.
         res = {**doc.to_dict(), **doc.metadata}
-        if res["array"] is not None:
-            res["array"] = res["array"].tolist()
         if res["dataframe"] is not None:
             # Convert dataframe to a json string
             res["dataframe"] = res["dataframe"].to_json()
