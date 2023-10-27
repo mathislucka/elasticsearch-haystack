@@ -215,7 +215,6 @@ class ElasticsearchDocumentStore:
             blob=data["blob"],
             mime_type=data["mime_type"],
             metadata=data["metadata"],
-            id_hash_keys=data["id_hash_keys"],
             score=data["score"],
             embedding=data["embedding"],
         )
