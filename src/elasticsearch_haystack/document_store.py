@@ -6,8 +6,10 @@ import logging
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import numpy as np
-from elastic_transport import NodeConfig
-from elasticsearch import Elasticsearch, helpers
+
+# There are no import stubs for elastic_transport and elasticsearch so mypy fails
+from elastic_transport import NodeConfig  # type: ignore[import-not-found]
+from elasticsearch import Elasticsearch, helpers  # type: ignore[import-not-found]
 from haystack.preview import default_from_dict, default_to_dict
 from haystack.preview.dataclasses import Document
 from haystack.preview.document_stores.decorator import document_store
@@ -173,7 +175,12 @@ class ElasticsearchDocumentStore:
         _, errors = helpers.bulk(
             client=self._client,
             actions=(
-                {"_op_type": action, "_id": doc.id, "_source": self._serialize_document(doc)} for doc in documents
+                {
+                    "_op_type": action,
+                    "_id": doc.id,
+                    "_source": self._serialize_document(doc),
+                }
+                for doc in documents
             ),
             refresh="wait_for",
             index=self._index,
@@ -198,23 +205,22 @@ class ElasticsearchDocumentStore:
         data = hit["_source"]
 
         if "highlight" in hit:
-            data["metadata"]["highlighted"] = hit["highlight"]
+            data["meta"]["highlighted"] = hit["highlight"]
         data["score"] = hit["_score"]
 
         if dataframe := data["dataframe"]:
             data["dataframe"] = DataFrame.from_dict(json.loads(dataframe))
-        if embedding := data["embedding"]:
-            data["embedding"] = np.asarray(embedding, dtype=np.float32)
+        # if embedding := data["embedding"]:
+        #     data["embedding"] = np.asarray(embedding, dtype=np.float32)
 
         # We can't use Document.from_dict() as the data dictionary contains
         # all the metadata fields
         return Document(
             id=data["id"],
-            text=data["text"],
+            content=data["content"],
             dataframe=data["dataframe"],
             blob=data["blob"],
-            mime_type=data["mime_type"],
-            metadata=data["metadata"],
+            meta=data.get("meta", {}),
             score=data["score"],
             embedding=data["embedding"],
         )
@@ -229,12 +235,9 @@ class ElasticsearchDocumentStore:
         # self.filter_document().
         # Otherwise we'd have to filter out the fields that are not part of the
         # Document dataclass and keep them as metadata. This is faster and easier.
-        res = {**doc.to_dict(), **doc.metadata}
-        if res["dataframe"] is not None:
-            # Convert dataframe to a json string
-            res["dataframe"] = res["dataframe"].to_json()
-        if res["embedding"] is not None:
-            res["embedding"] = res["embedding"].tolist()
+        res = {**doc.to_dict(), **doc.meta}
+        # if res["embedding"] is not None:
+        #     res["embedding"] = res["embedding"].tolist()
         return res
 
     def delete_documents(self, document_ids: List[str]) -> None:
